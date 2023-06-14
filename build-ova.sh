@@ -13,6 +13,7 @@ tkr_metadata_folder=${image_builder_root}/tkr-metadata/
 custom_ovf_properties_file=${image_builder_root}/custom_ovf_properties.json
 artifacts_output_folder=${image_builder_root}/artifacts
 ova_destination_folder=${artifacts_output_folder}/ovas
+photon3_stig_compliance="false"
 
 function checkout_image_builder_branch() {
     # Check out image builder with specific commit for the
@@ -65,6 +66,27 @@ function generate_custom_ovf_properties() {
     --outfile ${custom_ovf_properties_file}
 }
 
+function check_photon3_stig_compliance() {
+    readarray -d + -t kubernetes_series_arr <<< "$KUBERNETES_VERSION"
+    kubernetes_series=$(echo "${kubernetes_series_arr[0]//v}")
+    printf -v versions '%s\n%s' "1.25.0" "$kubernetes_series"
+    if [[ $versions = "$(sort -V <<< "$versions")" ]]
+    then
+      photon3_stig_compliance="true"
+    fi
+}
+
+function download_photon3_stig_files() {
+    check_photon3_stig_compliance
+    if [ ${OS_TARGET} == "photon-3" ] && [ ${photon3_stig_compliance} == "true" ]
+    then
+      wget -q http://${ARTIFACTS_CONTAINER_IP}:${ARTIFACTS_CONTAINER_PORT}/artifacts/photon-3-stig-hardening.tar.gz
+      tar -xvf photon-3-stig-hardening.tar.gz -C ${image_builder_root}/image/ansible/
+      mv ${image_builder_root}/image/ansible/photon-3-stig-hardening-* ${image_builder_root}/image/ansible/tanzu-compliance
+      rm -rf photon-3-stig-hardening.tar.gz
+    fi
+}
+
 # Enable packer debug logging to the log file
 function packer_logging() {
     mkdir /image-builder/packer_cache
@@ -93,15 +115,24 @@ function copy_ova() {
     --ova_destination_folder ${ova_destination_folder}
 }
 
+function remove_photon3_stig_files() {
+  if [ ${OS_TARGET} == "photon-3" ] && [ ${photon3_stig_compliance} == "true" ]
+    then
+      rm -rf ${image_builder_root}/image/ansible/tanzu-compliance
+    fi
+}
+
 function main() {
     checkout_image_builder_branch
     copy_custom_image_builder_files
     download_configuration_files
     generate_packager_configuration
     generate_custom_ovf_properties
+    download_photon3_stig_files
     packer_logging
     trigger_image_builder
     copy_ova
+    remove_photon3_stig_files
 }
 
 main
