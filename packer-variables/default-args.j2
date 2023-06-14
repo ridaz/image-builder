@@ -43,7 +43,7 @@
     "custom_role": "true",
     {# If a custom role is create in a different location append that
     location after mounting that Path using docker #}
-
+    "custom_role_names": "/image-builder/images/capi/image/ansible {% if photon3_stig_compliance == "true" %} {{ photon3_stig_custom_role }} {% endif %} ",
     {# Update the required packer based on the OS consumption #}
     {% if os_type == "photon-3" %}
     "distro_version": "3.0",
