@@ -80,9 +80,14 @@ function download_photon3_stig_files() {
     check_photon3_stig_compliance
     if [ ${OS_TARGET} == "photon-3" ] && [ ${photon3_stig_compliance} == "true" ]
     then
+      tanzu_compliance_dir="${image_builder_root}/image/ansible/tanzu-compliance"
+      if [ -d "$tanzu_compliance_dir" ]
+      then
+        rm -rf $tanzu_compliance_dir
+      fi
       wget -q http://${ARTIFACTS_CONTAINER_IP}:${ARTIFACTS_CONTAINER_PORT}/artifacts/photon-3-stig-hardening.tar.gz
       tar -xvf photon-3-stig-hardening.tar.gz -C ${image_builder_root}/image/ansible/
-      mv ${image_builder_root}/image/ansible/photon-3-stig-hardening-* ${image_builder_root}/image/ansible/tanzu-compliance
+      mv ${image_builder_root}/image/ansible/photon-3-stig-hardening-* $tanzu_compliance_dir
       rm -rf photon-3-stig-hardening.tar.gz
     fi
 }
@@ -116,9 +121,10 @@ function copy_ova() {
 }
 
 function remove_photon3_stig_files() {
-  if [ ${OS_TARGET} == "photon-3" ] && [ ${photon3_stig_compliance} == "true" ]
+  tanzu_compliance_dir="${image_builder_root}/image/ansible/tanzu-compliance"
+  if [ -d "$tanzu_compliance_dir" ]
     then
-      rm -rf ${image_builder_root}/image/ansible/tanzu-compliance
+      rm -rf $tanzu_compliance_dir
     fi
 }
 
