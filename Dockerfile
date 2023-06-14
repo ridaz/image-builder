@@ -15,7 +15,7 @@ RUN tdnf -y update
 RUN tdnf -y upgrade
 
 # Install required packages
-RUN for package in unzip git wget build-essential python3.8 python3-pip python-jinja2 python3-semver jq coreutils openssh-server; do tdnf -y install "$package"; done
+RUN for package in unzip git wget build-essential python3.8 python3-pip python-jinja2 jq coreutils openssh-server; do tdnf -y install "$package"; done
 
 # Install Packer
 RUN wget https://releases.hashicorp.com/packer/"$PACKER_VERSION"/packer_"$PACKER_VERSION"_linux_amd64.zip
@@ -24,6 +24,9 @@ RUN mv /tmp/packer /usr/local/bin/
 
 # Install Ansible
 RUN pip3 install ansible-core==$ANSIBLE_VERSION
+
+# Install Semver
+RUN pip3 install semver
 
 # Install ovftool
 # TODO: this URL might change or expire so need to look at better way to install it on the container.
